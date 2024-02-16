@@ -1,0 +1,90 @@
+---
+title: "HR Analytics"
+Author: Jonathan Mastin
+Date: 02/15/2024
+output: html_notebook
+---
+
+**Scenario**
+
+For this project, I'm a People Data Analyst intern for IBM in the Human Resources department. Recently, there's been lots of people leaving the company. My boss wants me to explore why.
+
+*This data set was an augmented version created by real IBM data scientists, but isn't exactly 100% real data. It's probably the most commonly used data set for People Analytics.* 
+
+This data set has 1470 rows where each row is an employee. There are 35 different columns that describe that employee. The most important column is the "Attrition" column which describes whether that employee left or stayed at the company. It's unclear if "Attrition" includes both voluntary quitting & layoffs, or just one. I think it's easier to assume it's voluntary departures. The other columns include demographics data such as age, education, and marital status. Then there is more job related data such how much they earn a month, how long they've been in their current position, when the last time they were promoted, etc
+
+
+```{r}
+# Read in the data
+hrdata <- read.csv("HR-Employee-Attrition.csv")
+```
+
+**Statistical Analysis**
+
+*The company wants to get an overview of how some of the most important demographics correlate.*
+```{r}
+# Creating a correlation matrix
+print(cor(
+hrdata[ , c("Age", "DailyRate", "DistanceFromHome", "Education", "HourlyRate", "MonthlyIncome", "MonthlyRate", "NumCompaniesWorked", "TotalWorkingYears", "TrainingTimesLastYear")]
+))
+```
+From this correlation matrix we can see that `TotalWorkingYears` and `MonthlyIncome` have the highest correlation of 0.772893246. 
+*A correlation greater that 0.7 means there is a strong correlation.*
+
+```{r}
+pairs(~MonthlyIncome+Age+TotalWorkingYears+Education,data = hrdata,
+main = "Scatterplot Matrix")
+```
+**Hypothesis Testing**
+```{r}
+boxplot(Age~Attrition,data=hrdata, main= "Who Got Fired", xlab="Attrition", ylab="Age")
+```
+
+```{r}
+yes_age <- hrdata[(hrdata$Attrition == "Yes"),'Age']
+no_age <- hrdata[(hrdata$Attrition != "Yes"),'Age']
+t.test(yes_age, no_age)
+```
+*Because p is less than 0.05, there is a statistically significant difference between the two samples, meaning the null hypothesis should be rejected in such a case.*
+
+**A disgruntled employee states that it was just based on the `EmployeeNumber`, and new employees were let go more than old employees.**
+```{r}
+boxplot(EmployeeNumber ~ Attrition, data=hrdata, main="Who Got Fired",
+        xlab="Attrition", ylab="EmployeeNumber")
+```
+
+```{r}
+yes_age <- hrdata[(hrdata$Attrition == "Yes"), "EmployeeNumber"]
+no_age <- hrdata[(hrdata$Attrition != "Yes"), "EmployeeNumber"]
+t.test(yes_age, no_age)
+```
+*Because p is greater than 0.05 is not considered to be statistically significant, meaning the null hypothesis should not be rejected.*
+
+
+```{r}
+# Create a linear regression model that predicts the Monthly Income based on Age
+model1 = lm(MonthlyIncome ~ Age, data=hrdata)
+summary(model1)
+```
+**R2: 0.2479 | P: 2e-16**
+
+*Since p is less than 0.05, we can say with 95% confidence this model is statistically significant.*
+  
+
+
+```{r}
+model2 = lm(MonthlyIncome ~ Age + TotalWorkingYears, data=hrdata)
+summary(model2)
+```
+**R2: 0.5988 | P: 2e-16**
+
+*Since p is less than 0.05, we can say with 95% confidence for this model is statistically significant.* 
+
+
+**Conclusion**
+
+After exploring the data and analyzing the essential columns, the answer as to why many people are leaving the company can be attributed to age and the total working years. Many factors can play into that; some can retire while others may be let go due to poor performance. In today's economic state, people job hop every 2 to 3 years because they can gain experience and then leverage that experience to get a new job with an approximate 15% raise compared to staying at a company and getting an average of 3-5% raise annually. You lose money by staying at a company for over 3 years. This is then compounded by companies no longer offering pensions, so staying at a company for years is not advantageous. 
+
+**Action Step**
+
+To help stop the attrition, the company can do many different things. They can pay the employees more, give more significant raises, or improve the work-life balance. Furthermore, the company can invest in their employees by offering classes on various topics such as how to invest appropriately, proper budgeting, or continuing education courses so employees can improve or gain new skills.
